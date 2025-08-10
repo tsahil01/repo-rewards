@@ -12,7 +12,7 @@ RepoRewards helps developers find paid, high‑quality GitHub issues fast. It cu
 
 * **Frontend:** Next.js (App Router), Tailwind CSS
 * **Backend:** Prisma + Postgres
-* **Auth:** Better Auth (GitHub OAuth)
+* **Auth:** Better Auth (GitHub OAuth) https://www.better-auth.com/llms.txt
 * **Payments:** DodoPayments (stubbed for future monetization)
 
 ---
