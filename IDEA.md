@@ -1,23 +1,33 @@
-# repo-rewards
+### repo-rewards
 RepoRewards helps developers find paid, high‑quality GitHub issues fast. It curates and ranks new bounty opportunities that match your skills, so you can discover, save, and start the most valuable work quickly. The goal: connect you to paid, high-signal work the moment it appears.
 
 
 ---
 
-## MVP Web App Specification
+### MVP Web App Specification
 
 **Goal:** Build a free-tier MVP web app that surfaces the best GitHub issues with bounties.
+
+---
+
+#### 📊 Project Status
+
+| 🟢 Done | 🟡 Working | 🔴 To Do |
+|----------|------------|-----------|
+| • Next.js + Tailwind setup<br>• Prisma + Postgres config<br>• Better Auth + GitHub OAuth<br>• DodoPayments plugin integration<br>• Database schema design | • Project structure setup<br>• Environment configuration | • User onboarding flow<br>• GitHub issue ingestion<br>• UI components & pages<br>• Scoring algorithm<br>• Email digest system<br>• Bounty detection logic |
+
+---
 
 **Tech Stack:**
 
 * **Frontend:** Next.js (App Router), Tailwind CSS
 * **Backend:** Prisma + Postgres
 * **Auth:** Better Auth (GitHub OAuth) https://www.better-auth.com/llms.txt
-* **Payments:** DodoPayments (stubbed for future monetization)
+* **Payments:** DodoPayments plugin integrated with Better Auth
 
 ---
 
-### 1. Auth & Onboarding
+#### 1. Auth & Onboarding
 
 * **Login:** GitHub login via Better Auth.
 * **Profile Fetch:** On first login, fetch public GitHub profile to infer top languages.
@@ -30,7 +40,7 @@ RepoRewards helps developers find paid, high‑quality GitHub issues fast. It cu
 
 ---
 
-### 2. Data Model (Prisma)
+#### 2. Data Model (Prisma)
 
 * **User**
 
@@ -47,7 +57,7 @@ RepoRewards helps developers find paid, high‑quality GitHub issues fast. It cu
 * **UserIssue**
 
   * `id`, `userId`, `issueId`, `status` (`saved` | `started` | `done`), `timestamps`
-* **Subscription**
+* **DigestSubscription**
 
   * `id`, `userId`, `filters` (JSON: `labels[]`, `languages[]`, `minStars`, `orgs[]`, `repos[]`)
   * `frequency` (`daily`), `lastSentAt`
@@ -57,7 +67,7 @@ RepoRewards helps developers find paid, high‑quality GitHub issues fast. It cu
 
 ---
 
-### 3. Ingestion (Scheduled Cron)
+#### 3. Ingestion (Scheduled Cron)
 
 * Runs every **10–15 minutes** (serverless/job runner).
 * **GitHub REST search** for open issues updated in the last 48h and likely to have bounties.
@@ -73,7 +83,7 @@ RepoRewards helps developers find paid, high‑quality GitHub issues fast. It cu
 
 ---
 
-### 4. Bounty Detection Heuristics
+#### 4. Bounty Detection Heuristics
 
 * Mark `isBounty = true` if:
 
@@ -88,7 +98,7 @@ RepoRewards helps developers find paid, high‑quality GitHub issues fast. It cu
 
 ---
 
-### 5. Scoring
+#### 5. Scoring
 
 * Compute score on **upsert** using weighted formula:
 
@@ -102,7 +112,7 @@ RepoRewards helps developers find paid, high‑quality GitHub issues fast. It cu
 
 ---
 
-### 6. UI Features
+#### 6. UI Features
 
 * **Protected Home Feed:**
 
@@ -123,7 +133,7 @@ RepoRewards helps developers find paid, high‑quality GitHub issues fast. It cu
 
 ---
 
-### 7. Daily Email Digest
+#### 7. Daily Email Digest
 
 * On signup, create a daily subscription.
 * Scheduled job:
@@ -134,7 +144,7 @@ RepoRewards helps developers find paid, high‑quality GitHub issues fast. It cu
 
 ---
 
-### 8. Security & Privacy
+#### 8. Security & Privacy
 
 * Read-only public GitHub scope.
 * Store minimal PII.
@@ -144,7 +154,7 @@ RepoRewards helps developers find paid, high‑quality GitHub issues fast. It cu
 
 ---
 
-### 9. Infrastructure
+#### 9. Infrastructure
 
 * Deploy on Vercel.
 * Managed Postgres.
@@ -157,7 +167,7 @@ RepoRewards helps developers find paid, high‑quality GitHub issues fast. It cu
 
 ---
 
-### Deliverables
+#### Deliverables
 
 * Working app with:
 
@@ -170,4 +180,4 @@ RepoRewards helps developers find paid, high‑quality GitHub issues fast. It cu
 ---
 
 
-working app with onboarding → feed → save/start → daily digest; Prisma schema and migrations; cron scripts; scoring and bounty detection modules with unit tests; feature-flagged DodoPayments integration hidden for now.
+working app with onboarding → feed → save/start → daily digest; Prisma schema and migrations; cron scripts; scoring and bounty detection modules with unit tests; DodoPayments integration via Better Auth plugin.
