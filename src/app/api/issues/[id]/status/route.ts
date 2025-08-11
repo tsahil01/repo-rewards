@@ -1,20 +1,68 @@
+import { auth } from '@/lib/auth';
+import prisma from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+
+// Status update validation schema
+const StatusUpdateSchema = z.object({
+    status: z.enum(['saved', 'started', 'done']),
+});
 
 export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+    request: NextRequest,
+    { params }: { params: { id: string } }
 ) {
-  try {
-    // TODO: Implement update status logic
-    // - Get user from session
-    // - Update issue status (started/done)
-    // - Validate status values
-    
-    return NextResponse.json({ message: 'Update status endpoint', id: params.id });
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+    try {
+        const session = await auth.api.getSession({
+            headers: request.headers
+        });
+
+        if (!session) {
+            return NextResponse.json(
+                { error: 'Unauthorized' },
+                { status: 401 }
+            );
+        }
+
+        const body = await request.json();
+        const validatedData = StatusUpdateSchema.parse(body);
+
+        // Update or create user issue record
+        const userIssue = await prisma.userIssue.upsert({
+            where: {
+                userId_issueId: {
+                    userId: session.user.id,
+                    issueId: params.id
+                }
+            },
+            update: {
+                status: validatedData.status,
+                updatedAt: new Date()
+            },
+            create: {
+                userId: session.user.id,
+                issueId: params.id,
+                status: validatedData.status
+            }
+        });
+
+        return NextResponse.json({
+            message: `Issue status updated to ${validatedData.status}`,
+            userIssue
+        });
+
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return NextResponse.json(
+                { error: 'Invalid status value', details: error.issues },
+                { status: 400 }
+            );
+        }
+
+        console.error('Update issue status error:', error);
+        return NextResponse.json(
+            { error: 'Internal server error' },
+            { status: 500 }
+        );
+    }
 }

@@ -1,19 +1,63 @@
+import { auth } from '@/lib/auth';
+import prisma from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+    request: NextRequest,
+    { params }: { params: { id: string } }
 ) {
-  try {
-    // TODO: Implement save issue logic
-    // - Get user from session
-    // - Save issue to user's list (status: 'saved')
-    
-    return NextResponse.json({ message: 'Save issue endpoint', id: params.id });
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+    try {
+        const session = await auth.api.getSession({
+            headers: request.headers
+        });
+
+        if (!session) {
+            return NextResponse.json(
+                { error: 'Unauthorized' },
+                { status: 401 }
+            );
+        }
+
+        // Parse request body for additional data
+        const body = await request.json();
+        const { issueData } = body; // Expect issue data from frontend
+
+        if (!issueData) {
+            return NextResponse.json(
+                { error: 'Issue data is required' },
+                { status: 400 }
+            );
+        }
+
+        // Create or update user issue record
+        const userIssue = await prisma.userIssue.upsert({
+            where: {
+                userId_issueId: {
+                    userId: session.user.id,
+                    issueId: params.id
+                }
+            },
+            update: {
+                status: 'saved',
+                updatedAt: new Date()
+            },
+            create: {
+                userId: session.user.id,
+                issueId: params.id,
+                status: 'saved'
+            }
+        });
+
+        return NextResponse.json({
+            message: 'Issue saved successfully',
+            userIssue
+        });
+
+    } catch (error) {
+        console.error('Save issue error:', error);
+        return NextResponse.json(
+            { error: 'Internal server error' },
+            { status: 500 }
+        );
+    }
 }
