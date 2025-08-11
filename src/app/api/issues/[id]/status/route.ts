@@ -30,9 +30,9 @@ export async function PUT(
         // Update or create user issue record
         const userIssue = await prisma.userIssue.upsert({
             where: {
-                userId_issueId: {
+                userId_githubIssueId: {
                     userId: session.user.id,
-                    issueId: params.id
+                    githubIssueId: params.id
                 }
             },
             update: {
@@ -41,7 +41,9 @@ export async function PUT(
             },
             create: {
                 userId: session.user.id,
-                issueId: params.id,
+                githubIssueId: params.id,
+                repoFullName: 'unknown/repo', // Will be updated when we have repo context
+                issueNumber: 0, // Will be updated when we have repo context
                 status: validatedData.status
             }
         });

@@ -32,9 +32,9 @@ export async function POST(
         // Create or update user issue record
         const userIssue = await prisma.userIssue.upsert({
             where: {
-                userId_issueId: {
+                userId_githubIssueId: {
                     userId: session.user.id,
-                    issueId: params.id
+                    githubIssueId: params.id
                 }
             },
             update: {
@@ -43,7 +43,9 @@ export async function POST(
             },
             create: {
                 userId: session.user.id,
-                issueId: params.id,
+                githubIssueId: params.id,
+                repoFullName: issueData.repoFullName || 'unknown/repo',
+                issueNumber: issueData.number || 0,
                 status: 'saved'
             }
         });

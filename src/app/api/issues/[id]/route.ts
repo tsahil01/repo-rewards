@@ -79,9 +79,9 @@ export async function GET(
         // Get user's status for this issue
         const userIssue = await prisma.userIssue.findUnique({
             where: {
-                userId_issueId: {
+                userId_githubIssueId: {
                     userId: session.user.id,
-                    issueId: params.id
+                    githubIssueId: params.id
                 }
             },
             select: {

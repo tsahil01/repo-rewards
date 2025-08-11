@@ -34,25 +34,14 @@ export async function GET(request: NextRequest) {
                     userId: session.user.id,
                     status: 'saved'
                 },
-                include: {
-                    issue: {
-                        select: {
-                            id: true,
-                            title: true,
-                            repoFullName: true,
-                            htmlUrl: true,
-                            labels: true,
-                            language: true,
-                            stars: true,
-                            isBounty: true,
-                            bountyAmountMin: true,
-                            bountyAmountMax: true,
-                            currency: true,
-                            score: true,
-                            openedAt: true,
-                            updatedAt: true,
-                        }
-                    }
+                select: {
+                    id: true,
+                    githubIssueId: true,
+                    repoFullName: true,
+                    issueNumber: true,
+                    status: true,
+                    createdAt: true,
+                    updatedAt: true,
                 },
                 orderBy: {
                     updatedAt: 'desc'
