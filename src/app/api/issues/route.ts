@@ -138,7 +138,7 @@ export async function GET(request: NextRequest) {
             issues = issues.filter((issue: any) => {
                 // Extract language from repository name or try to infer from repo
                 // This is a simplified approach - in production you might want to fetch repo details
-                const repoName = issue.repository_url.split('/').pop();
+                const repoName = issue.repository?.name || '';
                 return targetLanguages.some(lang => 
                     repoName.toLowerCase().includes(lang) || 
                     issue.repository?.language?.toLowerCase() === lang
