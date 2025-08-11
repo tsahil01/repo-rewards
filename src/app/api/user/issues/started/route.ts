@@ -1,7 +1,7 @@
 import { auth } from '@/lib/auth';
 import prisma from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'z';
+import { z } from 'zod';
 
 // Query parameter validation schema
 const StartedIssuesQuerySchema = z.object({
