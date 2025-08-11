@@ -54,7 +54,36 @@ export async function GET(
         
         // Now we can hit the actual GitHub API
         const githubResponse = await fetch(
-            `https://api.github.com/repos/${repo}/issues/${params.id}`,
+        // The GitHub issues endpoint expects the issue number, not the node ID.
+        let issueNumber: string | number = params.id;
+        // If params.id is not a number, try to resolve it to an issue number by searching issues
+        if (isNaN(Number(issueNumber))) {
+            // Fetch issues from the repo and find the one with matching node_id
+            const issuesListResponse = await fetch(
+                `https://api.github.com/repos/${repo}/issues?state=all&per_page=100`,
+                {
+                    headers: {
+                        'Authorization': `token ${githubAccount.accessToken}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'User-Agent': 'RepoRewards'
+                    }
+                }
+            );
+            if (!issuesListResponse.ok) {
+                throw new Error(`GitHub API error (listing issues): ${issuesListResponse.status} ${issuesListResponse.statusText}`);
+            }
+            const issues = await issuesListResponse.json();
+            const found = issues.find((issue: any) => issue.node_id === params.id);
+            if (!found) {
+                return NextResponse.json(
+                    { error: 'Issue not found (by node_id)' },
+                    { status: 404 }
+                );
+            }
+            issueNumber = found.number;
+        }
+        const githubResponse = await fetch(
+            `https://api.github.com/repos/${repo}/issues/${issueNumber}`,
             {
                 headers: {
                     'Authorization': `token ${githubAccount.accessToken}`,
