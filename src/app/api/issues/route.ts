@@ -141,7 +141,26 @@ export async function GET(request: NextRequest) {
                 const repoName = issue.repository?.name || '';
                 return targetLanguages.some(lang => 
                     repoName.toLowerCase().includes(lang) || 
-                    issue.repository?.language?.toLowerCase() === lang
+
+        // Fetch repository details for all unique repositories referenced in the issues
+        const uniqueRepoUrls = Array.from(new Set(issues.map((issue: any) => issue.repository_url)));
+        const repoDetailsMap = await fetchRepositoriesDetails(uniqueRepoUrls, githubAccount.accessToken);
+
+        // Attach repository details to each issue
+        issues = issues.map((issue: any) => ({
+            ...issue,
+            repository: repoDetailsMap[issue.repository_url]
+        }));
+        
+        // Post-filter by language if specified (GitHub search doesn't support language filtering)
+        if (validatedQuery.languages) {
+            const targetLanguages = validatedQuery.languages.split(',').map((l: string) => l.trim().toLowerCase());
+            issues = issues.filter((issue: any) => {
+                // Extract language from repository name or try to infer from repo
+                const repoName = issue.repository_url.split('/').pop();
+                return targetLanguages.some(lang => 
+                    repoName.toLowerCase().includes(lang) || 
+                    (issue.repository && issue.repository.language && issue.repository.language.toLowerCase() === lang)
                 );
             });
         }
