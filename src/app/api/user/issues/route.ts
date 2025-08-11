@@ -27,7 +27,6 @@ export async function GET(request: NextRequest) {
         const queryData = Object.fromEntries(searchParams.entries());
         const validatedQuery = UserIssuesQuerySchema.parse(queryData);
 
-        // Get all user issues (no status filtering)
 
         // Get user issues with pagination
         const [userIssues, total] = await Promise.all([
