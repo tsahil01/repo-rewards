@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 // Query parameter validation schema
-const UserIssuesQuerySchema = z.object({
+const DoneIssuesQuerySchema = z.object({
     page: z.string().transform(Number).pipe(z.number().min(1)).optional().default(() => 1),
     limit: z.string().transform(Number).pipe(z.number().min(1).max(50)).optional().default(() => 10),
 });
@@ -25,15 +25,14 @@ export async function GET(request: NextRequest) {
         // Parse and validate query parameters
         const { searchParams } = new URL(request.url);
         const queryData = Object.fromEntries(searchParams.entries());
-        const validatedQuery = UserIssuesQuerySchema.parse(queryData);
+        const validatedQuery = DoneIssuesQuerySchema.parse(queryData);
 
-        // Get all user issues (no status filtering)
-
-        // Get user issues with pagination
-        const [userIssues, total] = await Promise.all([
+        // Get completed issues with pagination
+        const [doneIssues, total] = await Promise.all([
             prisma.userIssue.findMany({
                 where: {
-                    userId: session.user.id
+                    userId: session.user.id,
+                    status: 'done'
                 },
                 include: {
                     issue: {
@@ -63,13 +62,14 @@ export async function GET(request: NextRequest) {
             }),
             prisma.userIssue.count({
                 where: {
-                    userId: session.user.id
+                    userId: session.user.id,
+                    status: 'done'
                 }
             })
         ]);
 
         return NextResponse.json({
-            userIssues,
+            doneIssues,
             pagination: {
                 page: validatedQuery.page,
                 limit: validatedQuery.limit,
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        console.error('User issues error:', error);
+        console.error('Done issues error:', error);
         return NextResponse.json(
             { error: 'Internal server error' },
             { status: 500 }

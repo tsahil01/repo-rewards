@@ -1,10 +1,10 @@
 import { auth } from '@/lib/auth';
 import prisma from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
+import { z } from 'z';
 
 // Query parameter validation schema
-const UserIssuesQuerySchema = z.object({
+const StartedIssuesQuerySchema = z.object({
     page: z.string().transform(Number).pipe(z.number().min(1)).optional().default(() => 1),
     limit: z.string().transform(Number).pipe(z.number().min(1).max(50)).optional().default(() => 10),
 });
@@ -25,15 +25,14 @@ export async function GET(request: NextRequest) {
         // Parse and validate query parameters
         const { searchParams } = new URL(request.url);
         const queryData = Object.fromEntries(searchParams.entries());
-        const validatedQuery = UserIssuesQuerySchema.parse(queryData);
+        const validatedQuery = StartedIssuesQuerySchema.parse(queryData);
 
-        // Get all user issues (no status filtering)
-
-        // Get user issues with pagination
-        const [userIssues, total] = await Promise.all([
+        // Get started issues with pagination
+        const [startedIssues, total] = await Promise.all([
             prisma.userIssue.findMany({
                 where: {
-                    userId: session.user.id
+                    userId: session.user.id,
+                    status: 'started'
                 },
                 include: {
                     issue: {
@@ -63,13 +62,14 @@ export async function GET(request: NextRequest) {
             }),
             prisma.userIssue.count({
                 where: {
-                    userId: session.user.id
+                    userId: session.user.id,
+                    status: 'started'
                 }
             })
         ]);
 
         return NextResponse.json({
-            userIssues,
+            startedIssues,
             pagination: {
                 page: validatedQuery.page,
                 limit: validatedQuery.limit,
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        console.error('User issues error:', error);
+        console.error('Started issues error:', error);
         return NextResponse.json(
             { error: 'Internal server error' },
             { status: 500 }
