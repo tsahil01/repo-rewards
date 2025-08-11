@@ -14,7 +14,7 @@ RepoRewards helps developers find paid, high‑quality GitHub issues fast. It cu
 
 | 🟢 Done | 🟡 Working | 🔴 To Do |
 |----------|------------|-----------|
-| • Next.js + Tailwind setup<br>• Prisma + Postgres config<br>• Better Auth + GitHub OAuth<br>• DodoPayments plugin integration<br>• Database schema design | • Project structure setup<br>• Environment configuration | • User onboarding flow<br>• GitHub issue ingestion<br>• UI components & pages<br>• Scoring algorithm<br>• Email digest system<br>• Bounty detection logic |
+| • Next.js + Tailwind setup<br>• Prisma + Postgres config<br>• Better Auth + GitHub OAuth<br>• DodoPayments plugin integration<br>• Database schema design<br>• Backend API routes (profile, issues, user issues, digest) | • Environment configuration | • Onboarding flow UI<br>• Issues feed UI + filters<br>• My List (Saved/Started/Done) UI<br>• Settings UI (profile + digest)<br>• Scoring refinements<br>• Daily digest job |
 
 ---
 
@@ -48,15 +48,10 @@ RepoRewards helps developers find paid, high‑quality GitHub issues fast. It cu
 * **Profile**
 
   * `userId`, `primaryLanguages[]`, `topics[]`, `followedRepos[]`, `followedOrgs[]`
-* **Issue**
-
-  * `id`, `githubId`, `repoFullName`, `number`, `title`, `bodyExcerpt`, `htmlUrl`, `labels[]`, `language`, `stars`, `org`
-  * `isBounty`, `bountyType` (`repo-label` | `link` | `platform`), `bountyUrl`
-  * `bountyAmountMin`/`Max` (nullable int), `currency`
-  * `openedAt`, `updatedAt`, `score` (float)
 * **UserIssue**
 
-  * `id`, `userId`, `issueId`, `status` (`saved` | `started` | `done`), `timestamps`
+  * `id`, `userId`, `githubIssueId`, `repoFullName`, `issueNumber`, `status` (`saved` | `started` | `done`), `timestamps`
+  * Note: Issues are fetched live from GitHub using the user's token; we don't persist issue rows.
 * **DigestSubscription**
 
   * `id`, `userId`, `filters` (JSON: `labels[]`, `languages[]`, `minStars`, `orgs[]`, `repos[]`)
@@ -68,6 +63,9 @@ RepoRewards helps developers find paid, high‑quality GitHub issues fast. It cu
 ---
 
 #### 3. Ingestion (Scheduled Cron)
+
+* (Defer) For MVP we fetch directly from GitHub at request time using the user's token.
+* Future: background caching for performance if needed.
 
 * Runs every **10–15 minutes** (serverless/job runner).
 * **GitHub REST search** for open issues updated in the last 48h and likely to have bounties.
@@ -100,7 +98,7 @@ RepoRewards helps developers find paid, high‑quality GitHub issues fast. It cu
 
 #### 5. Scoring
 
-* Compute score on **upsert** using weighted formula:
+* Compute score at request-time using weighted formula:
 
   * Recency decay.
   * Bounty signal strength (`label` > `link` > `keyword`).
@@ -108,7 +106,6 @@ RepoRewards helps developers find paid, high‑quality GitHub issues fast. It cu
   * Language match to user profile.
   * Label match to user filters.
   * Boosts for followed repos/orgs.
-* Persist score on `Issue`.
 
 ---
 

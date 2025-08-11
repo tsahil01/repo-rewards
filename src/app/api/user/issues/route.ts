@@ -1,0 +1,83 @@
+import { auth } from '@/lib/auth';
+import prisma from '@/lib/db';
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+
+// Query parameter validation schema
+const UserIssuesQuerySchema = z.object({
+    page: z.string().transform(Number).pipe(z.number().min(1)).optional().default(() => 1),
+    limit: z.string().transform(Number).pipe(z.number().min(1).max(50)).optional().default(() => 10),
+});
+
+export async function GET(request: NextRequest) {
+    try {
+        const session = await auth.api.getSession({
+            headers: request.headers
+        });
+
+        if (!session) {
+            return NextResponse.json(
+                { error: 'Unauthorized' },
+                { status: 401 }
+            );
+        }
+
+        // Parse and validate query parameters
+        const { searchParams } = new URL(request.url);
+        const queryData = Object.fromEntries(searchParams.entries());
+        const validatedQuery = UserIssuesQuerySchema.parse(queryData);
+
+
+        // Get user issues with pagination
+        const [userIssues, total] = await Promise.all([
+            prisma.userIssue.findMany({
+                where: {
+                    userId: session.user.id
+                },
+                select: {
+                    id: true,
+                    githubIssueId: true,
+                    repoFullName: true,
+                    issueNumber: true,
+                    status: true,
+                    createdAt: true,
+                    updatedAt: true,
+                },
+                orderBy: {
+                    updatedAt: 'desc'
+                },
+                skip: (validatedQuery.page - 1) * validatedQuery.limit,
+                take: validatedQuery.limit,
+            }),
+            prisma.userIssue.count({
+                where: {
+                    userId: session.user.id
+                }
+            })
+        ]);
+
+        return NextResponse.json({
+            userIssues,
+            pagination: {
+                page: validatedQuery.page,
+                limit: validatedQuery.limit,
+                total,
+                totalPages: Math.ceil(total / validatedQuery.limit)
+            }
+        });
+
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return NextResponse.json(
+                { error: 'Invalid query parameters', details: error.issues },
+                { status: 400 }
+            );
+        }
+
+        console.error('User issues error:', error);
+        return NextResponse.json(
+            { error: 'Internal server error' },
+            { status: 500 }
+        );
+    }
+}
